@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI-Based ATS Resume Screening System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #f5f6fa;
+            background: linear-gradient(120deg, #181a20 0%, #23262f 100%);
+            animation: bgmove 8s infinite alternate;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        @keyframes bgmove { 0% {background-position: 0% 50%;} 100% {background-position: 100% 50%;} }
+        #stars, #ai-icons { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+        .top-contact-icons {
+            position: fixed;
+            top: 24px;
+            right: 32px;
+            z-index: 10;
+            display: flex;
+            gap: 18px;
+        }
+        .top-contact-icons a {
+            color: #fff;
+            background: #00aaff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            box-shadow: 0 2px 8px #0055ff44;
+            transition: background 0.2s, transform 0.2s;
+            text-decoration: none;
+        }
+        .top-contact-icons a:hover {
+            background: #0055ff;
+            transform: scale(1.18);
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        .container {
+            max-width: 600px;
+            width: 95vw;
+            background: rgba(35,38,47,0.95);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+            padding: 48px 32px 36px 32px;
+            text-align: center;
+            opacity: 0;
+            animation: fadein 1.2s forwards;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 32px;
+        }
+        @keyframes fadein { to {opacity: 1;} }
+        h1 { font-size: 2.3rem; margin-bottom: 0.5em; color: #00aaff; letter-spacing: 1px; text-shadow: 0 2px 12px #0055ff44; }
+        .welcome { font-size: 1.15rem; margin-bottom: 2.2em; color: #b2bec3; letter-spacing: 0.5px; }
+        .tagline { font-size: 1.08rem; color: #00aaff; font-weight: 600; margin-bottom: 2em; margin-top: 0.5em; display: block; }
+        .imp-points {
+            text-align:left; 
+            background:rgba(44,62,80,0.13); 
+            border-radius:10px; 
+            padding:18px 18px 12px 18px; 
+            margin-bottom:22px; 
+            box-shadow:0 2px 12px #0055ff22;
+        }
+        .imp-points h3 {
+            color:#00aaff; 
+            font-size:1.1rem; 
+            margin-top:0; 
+            margin-bottom:10px;
+        }
+        .imp-points ul {
+            padding-left:18px; 
+            color:#b2bec3; 
+            font-size:1rem; 
+            margin:0;
+        }
+        .open-btn {
+            background: linear-gradient(90deg,#00aaff 0%,#0055ff 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 1em 2.5em;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 0 18px 2px #00aaff88, 0 2px 8px rgba(0,170,255,0.15);
+            transition: transform 0.18s, box-shadow 0.18s;
+            position: relative;
+            overflow: hidden;
+        }
+        .open-btn::after {
+            content: '';
+            position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+            border-radius: 10px;
+            background: radial-gradient(circle, #00aaff33 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .open-btn:hover { transform: scale(1.07); box-shadow: 0 0 32px 6px #00aaffcc; }
+        .open-btn:hover::after { opacity: 1; }
+        .pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% {box-shadow: 0 0 18px 2px #00aaff88;} 50% {box-shadow: 0 0 32px 8px #00aaffcc;} 100% {box-shadow: 0 0 18px 2px #00aaff88;} }
+        #loading { display:none; margin-top:2em; }
+        .spinner { border: 4px solid #23262f; border-top: 4px solid #00aaff; border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+        .loading-text { margin-top:1em; color:#00aaff; font-weight:600; }
+        .footer {
+            width: 100vw;
+            left: 0;
+            bottom: 0;
+            position: fixed;
+            font-size: 1.05em;
+            color: #ffffff;
+            opacity: 1;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            background: linear-gradient(90deg,#f7f9f9 0%,#0055ff 100%);
+            border-radius: 0;
+            padding: 0.8em 0 0.5em 0;
+            box-shadow: 0 0 18px 2px #e7edf388;
+            text-shadow: 0 2px 8px #0650e488;
+            animation: footerGlow 2s infinite alternate;
+            text-align: center;
+            z-index: 20;
+        }
+        @keyframes footerGlow {
+            0% { box-shadow: 0 0 18px 2px #00aaff88; }
+            100% { box-shadow: 0 0 32px 8px #00aaffcc; }
+        }
+        @media (max-width: 600px) {
+            .container { padding: 24px 8px; }
+            h1 { font-size: 1.6rem; }
+            .top-contact-icons { right: 10px; top: 10px; }
+            .footer { font-size: 0.95em; padding: 0.7em 0 0.4em 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-contact-icons">
+        <a href="mailto:your.sandeepprajapati789789@gmail.com" target="_blank" title="Email">
+            <i class="fas fa-envelope"></i>
+        </a>
+        <a href="https://www.linkedin.com/in/sandeep-prajapati-280b7b284/" target="_blank" title="LinkedIn">
+            <i class="fab fa-linkedin"></i>
+        </a>
+        <a href="https://github.com/SANDEEP789PRA" target="_blank" title="GitHub">
+            <i class="fab fa-github"></i>
+        </a>
+    </div>
+    <canvas id="stars"></canvas>
+    <canvas id="ai-icons"></canvas>
+    <div class="main-content">
+        <div class="container">
+            <h1>AI-Based ATS Resume Screening System</h1>
+            <div class="welcome">Welcome to your intelligent resume screening assistant.</div>
+            <span class="tagline">Upload, Analyze, and Optimize your Resume in Seconds.<br>
+            Let our AI help you land your dream job.</span>
+            <!-- Important Points Section -->
+            <div class="imp-points">
+                <h3><i class="fas fa-info-circle"></i> Quick Tips</h3>
+                <ul>
+                    <li>Upload your resume in <b>PDF</b> format.</li>
+                    <li>Paste the job description for best AI matching.</li>
+                    <li>Click <b>Start ATS Screening</b> to begin.</li>
+                    <li>Allow pop-ups for the ATS tab to open.</li>
+                    <li>Your data is <b>secure</b> & never stored.</li>
+                    <li>Need help? Use the <b>top-right contact icons</b>.</li>
+                </ul>
+            </div>
+            <button id="startBtn" class="open-btn pulse" onclick="openATS()">🚀 Start ATS Screening</button>
+            <div id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Launching ATS System...</div>
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        Powered by SANDEEP &mdash; Your career, upgraded.
+    </div>
+    <script>
+        // Stars background
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+        let w = window.innerWidth;
+        let h = window.innerHeight;
+        canvas.width = w; canvas.height = h;
+        let stars = [];
+        for(let i=0;i<120;i++){
+            stars.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.2+0.3, alpha: Math.random()*0.5+0.5, dx: (Math.random()-0.5)*0.15, dy: (Math.random()-0.5)*0.15 });
+        }
+        function drawStars(){
+            ctx.clearRect(0,0,w,h);
+            for(let s of stars){
+                ctx.save();
+                ctx.globalAlpha = s.alpha;
+                ctx.beginPath();
+                ctx.arc(s.x,s.y,s.r,0,2*Math.PI);
+                ctx.fillStyle="#fff";
+                ctx.shadowColor="#00aaff";
+                ctx.shadowBlur=8;
+                ctx.fill();
+                ctx.restore();
+                s.x+=s.dx; s.y+=s.dy;
+                if(s.x<0)s.x=w; if(s.x>w)s.x=0;
+                if(s.y<0)s.y=h; if(s.y>h)s.y=0;
+                s.alpha += (Math.random()-0.5)*0.02;
+                if(s.alpha<0.5)s.alpha=0.5; if(s.alpha>1)s.alpha=1;
+            }
+            requestAnimationFrame(drawStars);
+        }
+        drawStars();
+        // AI Icons floating
+        const iconCanvas = document.getElementById('ai-icons');
+        const iconCtx = iconCanvas.getContext('2d');
+        iconCanvas.width = w; iconCanvas.height = h;
+        const icons = ["📄","🔍","🧠","⭐","💡","📄","🔍","🧠"];
+        let aiIcons = [];
+        for(let i=0;i<25;i++){
+            aiIcons.push({
+                x: Math.random()*w,
+                y: Math.random()*h,
+                icon: icons[Math.floor(Math.random()*icons.length)],
+                size: Math.random()*24+16,
+                dx: (Math.random()-0.5)*0.4,
+                dy: (Math.random()-0.5)*0.4,
+                alpha: Math.random()*0.5+0.5
+            });
+        }
+        function drawAIIcons(){
+            iconCtx.clearRect(0,0,w,h);
+            for(let ic of aiIcons){
+                iconCtx.save();
+                iconCtx.globalAlpha = ic.alpha;
+                iconCtx.font = ic.size+"px sans-serif";
+                iconCtx.fillText(ic.icon, ic.x, ic.y);
+                iconCtx.restore();
+                ic.x += ic.dx; ic.y += ic.dy;
+                if(ic.x<0) ic.x=w; if(ic.x>w) ic.x=0;
+                if(ic.y<0) ic.y=h; if(ic.y>h) ic.y=0;
+                ic.alpha += (Math.random()-0.5)*0.01;
+                if(ic.alpha<0.5) ic.alpha=0.5; if(ic.alpha>1) ic.alpha=1;
+            }
+            requestAnimationFrame(drawAIIcons);
+        }
+        drawAIIcons();
+        window.addEventListener('resize', ()=>{
+            w = window.innerWidth; h = window.innerHeight;
+            canvas.width = w; canvas.height = h;
+            iconCanvas.width = w; iconCanvas.height = h;
+        });
+        // Button action
+        function openATS() {
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            setTimeout(function() {
+                window.open("http://localhost:8501", "_blank");
+                document.getElementById('startBtn').style.display = 'inline-block';
+                document.getElementById('loading').style.display = 'none';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
